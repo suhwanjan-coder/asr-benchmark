@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+clips/
+out/
+lexicon/mine.txt

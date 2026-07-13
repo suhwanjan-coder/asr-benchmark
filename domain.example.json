@@ -1,0 +1,5 @@
+{
+  "_comment": "CJK sanity check. must_survive = terms that MUST appear intact in your recordings. known_bad = mis-hearings you have actually seen and want counted. Swap these for your own field.",
+  "must_survive": ["椎間盤", "神經", "肌肉", "韌帶", "關節", "注射", "超音波", "復健"],
+  "known_bad": ["最艱難突出", "最接盤", "追間盤"]
+}
