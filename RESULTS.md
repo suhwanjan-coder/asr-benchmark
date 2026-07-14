@@ -24,14 +24,22 @@ CSZS-zh-en **13.01 vs 29.49**, ASCEND-MIX **16.38 vs 21.01**, CommonVoice16-zh-T
 **7.97 vs 9.84**. So "is Breeze-ASR-25 better than Whisper at Taiwanese Mandarin
 code-switching" was **already answered** — I did not need to re-prove it.
 
-What official benchmarks could not answer, and what this repo is for:
+**Breeze-ASR-26's model card, by contrast, publishes exactly one number: a Taigi CER of
+30.13%.** No Mandarin benchmark. No English benchmark. No code-switching benchmark. No
+timestamp or alignment data of any kind. Outside Taigi, its behaviour is simply undocumented
+— even though it is a sibling fine-tune of the same Whisper base as ASR-25. Is it "ASR-25
+plus Taigi", or did Taigi cost it something? Nobody had published an answer.
 
-1. Does that advantage carry over to **my domain vocabulary**? (ASCEND and CommonVoice are
-   everyday speech, not lectures full of `nucleus pulposus` and `spondylolisthesis`.)
-2. Are the **timestamps** usable for aligning a transcript to slides?
+That gap is what this repo was pointed at. Three questions official benchmarks could not
+answer:
 
-Both answers turned out to matter, and the second one produced a finding that is in no
-model card.
+1. Does Breeze-ASR-25's advantage carry over to **my domain vocabulary**? (ASCEND and
+   CommonVoice are everyday speech, not lectures full of `nucleus pulposus` and
+   `spondylolisthesis`.)
+2. Are the **timestamps** usable for aligning a transcript to slides? (Neither card says.)
+3. **What does the Taigi model do outside Taigi?** (Undocumented, so: measure it.)
+
+All three mattered, and the last two produced findings that are in no model card.
 
 ## Ruler #1 — term quality (`eval_asr.py`)
 
