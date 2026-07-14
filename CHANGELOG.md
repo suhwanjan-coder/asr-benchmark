@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.1] - 2026-07-15
+
+Correcting how v0.2.0 read its own breeze26 number.
+
+### Changed
+- ==**The "182 vs 649" result was misread, and the README/RESULTS now say so.**== Breeze-ASR-26
+  is designed to emit Han characters, and it does that to English too — it **transliterates**
+  medical terms (`interlamina` → 印特拉蜜拉, `facet` → 防震). Its output volume did not
+  collapse; it has the **most** Han characters of the three models tested (19,617 vs
+  breeze25's 18,514). Only its English collapsed (313 tokens vs 1,293).
+- So `capture=182` conflates *missed* terms with *transliterated* terms. The conclusion for
+  this use case is unchanged (a note needs `interlamina`, not 印特拉蜜拉), but the reason is
+  different: **it is not "deaf to English terms", it renders them in Han characters.**
+- **New documented blind spot:** an English-only lexicon **systematically underrates any model
+  that prefers Han output**. README now states which question the ruler answers ("did it write
+  it the way I need?") and which it cannot ("did it understand?").
+- Credit where due: **Breeze-ASR-26 beats Google Gemini 3 Flash on its own turf** (Taigi CER
+  30.13 vs 32.52), plus Yating (32.11) and the MOE Taigi input method (30.70). v0.2.0 failed
+  to mention this; the Taigi result stands and nothing here disputes it.
+
+### Fixed
+- ==**The hotwords negative-result numbers did not reproduce.**== RESULTS.md claimed
+  breeze25+hotwords = 493 capture / 26 garbage ("−16%"); re-running `eval_asr.py` against the
+  transcripts gives **580 / 36 / 91.6%**. Corrected, and the claim restated: vocabulary
+  injection does not *destroy* capture, it simply **buys none** (587→580) while adding garbage
+  (29→36) and costing precision. The conclusion ("don't use hotwords") is unchanged; the
+  evidence for it is now the *absence of the promised benefit* plus the new invented words
+  (`sacroilar`, `buteroli`, `paravertibone` — none of which appear in un-prompted runs).
+
 ## [0.2.0] - 2026-07-14
 
 The second ruler, and what it found.

@@ -24,11 +24,16 @@ CSZS-zh-en **13.01 vs 29.49**, ASCEND-MIX **16.38 vs 21.01**, CommonVoice16-zh-T
 **7.97 vs 9.84**. So "is Breeze-ASR-25 better than Whisper at Taiwanese Mandarin
 code-switching" was **already answered** — I did not need to re-prove it.
 
-**Breeze-ASR-26's model card, by contrast, publishes exactly one number: a Taigi CER of
-30.13%.** No Mandarin benchmark. No English benchmark. No code-switching benchmark. No
-timestamp or alignment data of any kind. Outside Taigi, its behaviour is simply undocumented
-— even though it is a sibling fine-tune of the same Whisper base as ASR-25. Is it "ASR-25
-plus Taigi", or did Taigi cost it something? Nobody had published an answer.
+**Breeze-ASR-26 publishes Taigi and nothing else — and on Taigi it is genuinely strong:**
+CER 30.13%, beating the MOE Taigi input method (30.70), Yating (32.11) and **Google Gemini 3
+Flash (32.52)**. That result stands; nothing below disputes it.
+
+But that is the whole scorecard. No Mandarin benchmark. No English benchmark. No
+code-switching benchmark. No timestamp or alignment data of any kind. Outside Taigi its
+behaviour is simply undocumented — even though it is a sibling fine-tune of the same Whisper
+base as ASR-25. Is it "ASR-25 plus Taigi", or did Taigi cost it something? Nobody had
+published an answer. (It never *claimed* anything outside Taigi, so what follows is filling
+a gap, not disputing a claim.)
 
 That gap is what this repo was pointed at. Three questions official benchmarks could not
 answer:
@@ -55,11 +60,46 @@ All three mattered, and the last two produced findings that are in no model card
 extend to domain vocabulary. `beam10` buys precision at 1.7x the time and loses recall —
 not worth it.
 
-The last row is the Taigi model, included only to answer the obvious question. On
-Mandarin/English medical lectures it captures **182 real terms vs breeze25's 649** — under
-a third. Its garbage count is low (8) simply because it barely emits English terms at all,
-which is exactly what you would expect from a Taigi-tuned model. **That row is not a verdict
-on Breeze-ASR-26; it is a boundary marker — do not use it outside its language.**
+The last row is the Taigi model. On Mandarin/English medical lectures it captures **182 real
+terms vs breeze25's 649**. But ==**that number does not mean what it looks like**==, and
+reading it literally was a mistake — see below.
+
+### What 182 actually measures — a ruler blind spot, not just a model failure
+
+Breeze-ASR-26 is **designed to emit Han characters** ("outputs Mandarin Chinese characters
+rather than native Taigi orthography"). It does that to English too: it **transliterates**
+medical terms into Chinese. Same audio, same moment:
+
+| what the speaker said | breeze25 | **breeze26** | large-v3 |
+|---|---|---|---|
+| interlamina | `interlamina` | **印特拉蜜拉** | 英特拉米拉 |
+| facet | `phase` (misheard) | **防震 / 法西** | 發射 |
+
+Volume tells the story (same 15 clips):
+
+| | total chars | Han chars | English tokens |
+|---|---|---|---|
+| breeze25 | 31,537 | 18,514 | **1,293** |
+| **breeze26** | 27,579 | **19,617** | **313** |
+| large-v3 | 28,593 | 18,038 | 985 |
+
+**Its output did not collapse — it has the MOST Han characters of the three. Only the English
+collapsed.** It is not failing to speak; it is speaking in Han characters. (More Han chars is
+not "better Chinese" either — 印特拉蜜拉 is itself 5 Han characters.)
+
+So 182 conflates two different things: terms it **missed**, and terms it **heard but
+transliterated**. An English lexicon can only see the second kind of failure. ==**It cannot
+tell you whether the model understood.**==
+
+**Does the conclusion change? No — but the reason does.** For this use case it is still a
+failure: a note needs `interlamina`, not 印特拉蜜拉 (you cannot search it, cite it, or match
+it to a slide). But the honest statement is **"it renders English terms as Han characters,
+which is not the output form I need"** — *not* "it can't hear English terms." Those are very
+different verdicts, and the first draft of this file got it wrong.
+
+==**Generalise this before you reuse the ruler:** an English-only lexicon systematically
+underrates any model that prefers Han output. Decide which question you are asking — "did it
+understand?" or "did it write it the way I need?" This repo measures the second.==
 
 ### Settings mattered almost as much as the model
 
@@ -74,16 +114,22 @@ on Breeze-ASR-26; it is a boundary marker — do not use it outside its language
 
 | setup | capture | garbage | precision |
 |---|---|---|---|
-| **breeze25 (no prompt)** | **587** | 29 | **94.5%** |
-| breeze25 + hotwords | 493 | 26 | 91.7% |
-| large-v3 (no prompt) | 435 | 51 | 89.2% |
+| **breeze25 (no prompt)** | **587** | **29** | **94.5%** |
+| breeze25 + hotwords | 580 | 36 | 91.6% |
+| large-v3 (no prompt) | 435 | **51** | **89.2%** |
 | large-v3 + hotwords | 446 | 56 | 88.2% |
 
-**Vocabulary injection HURTS.** Both `hotwords` and `initial_prompt` lower capture and
-invent *new* garbage (`paravertibone`, `sacroilar`, `buteroli`) by dragging what the model
-heard toward the terms you supplied. A prompt is a **pull, not a dictionary**. The two
-terms I most wanted rescued (`nucleus pulposus`, `prolotherapy`) stayed wrong even when
-spelled out verbatim in the prompt.
+**Vocabulary injection buys you nothing, and costs precision.** Start with what it failed to
+do: **capture barely moves** (587→580, 435→446). The entire selling point — that naming your
+domain terms helps the model catch them — **does not happen**. Meanwhile garbage rises for
+both models (29→36, 51→56) and precision drops for both.
+
+The mechanism is worth more than the scores: **a prompt is a pull, not a dictionary.** It
+drags what the model heard toward the terms you supplied, and when the pull misses it invents
+new near-miss words. The added garbage is exactly that: breeze25 starts emitting `sacroilar`
+and `buteroli`, large-v3 emits `paravertibone` — ==none of which appear in the un-prompted
+runs==. And the two terms I most wanted rescued (`nucleus pulposus`, `prolotherapy`) stayed
+wrong even when spelled out verbatim in the prompt.
 
 **Two-model ensembling LOST**: union of large-v3 + breeze25 captured *fewer* real terms
 (571 vs 587) with **5x the garbage** (147 vs 29) at 2x the GPU time. A union inherits the
