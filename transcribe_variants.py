@@ -44,7 +44,35 @@ VARIANTS = {
     'novad_nocond_b10':   dict(beam_size=10, vad_filter=False, condition_on_previous_text=False),
     'novad_nocond_rep':   dict(beam_size=5,  vad_filter=False, condition_on_previous_text=False,
                                repetition_penalty=1.15),
+    # Word-level timestamps via cross-attention alignment. This BYPASSES Whisper's
+    # timestamp tokens, so it rescues models whose timestamp-token prediction was
+    # degraded by fine-tuning (Breeze-ASR-26 emits one 30s block per decode window
+    # otherwise). Costs ~1.3x decode time. Segments below are re-cut from the word
+    # timings, so eval_segments.py measures the rescued granularity directly.
+    'novad_nocond_wts':   dict(beam_size=5,  vad_filter=False, condition_on_previous_text=False,
+                               word_timestamps=True),
 }
+
+# Re-segmentation rule for word_timestamps variants: start a new segment on a
+# pause >= PAUSE_S, or once a segment would exceed MAX_SPAN_S.
+PAUSE_S = 0.6
+MAX_SPAN_S = 8.0
+
+
+def resegment(segments):
+    """Rebuild segment boundaries from word timings. Returns [(start, text), ...]."""
+    words = [w for s in segments for w in (s.words or [])]
+    if not words:
+        return []
+    out, cur = [], [words[0]]
+    for prev, w in zip(words, words[1:]):
+        if w.start - prev.end >= PAUSE_S or w.end - cur[0].start >= MAX_SPAN_S:
+            out.append(cur)
+            cur = []
+        cur.append(w)
+    if cur:
+        out.append(cur)
+    return [(c[0].start, ''.join(w.word for w in c).strip()) for c in out]
 
 
 def main():
@@ -77,7 +105,12 @@ def main():
             continue
         t1 = time.time()
         segments, _ = model.transcribe(os.path.join(a.clips, f), language=a.language, **kwargs)
-        lines = [f'[{int(s.start)//60:02d}:{int(s.start)%60:02d}] {s.text.strip()}' for s in segments]
+        if kwargs.get('word_timestamps'):
+            lines = [f'[{int(st)//60:02d}:{int(st)%60:02d}] {txt}'
+                     for st, txt in resegment(segments)]
+        else:
+            lines = [f'[{int(s.start)//60:02d}:{int(s.start)%60:02d}] {s.text.strip()}'
+                     for s in segments]
         elapsed = time.time() - t1
         with open(dest, 'w', encoding='utf-8') as fh:
             fh.write('\n'.join(lines))

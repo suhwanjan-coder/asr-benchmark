@@ -149,6 +149,51 @@ Run **one model per process**. Loading two models into one process on an 8 GB ca
 
 `lexicon/pmr-en.txt`: 187,227 lowercase English words auto-extracted from 100+ physical-medicine-and-rehabilitation textbooks used for my own study. It is a deduplicated, unordered word list with no frequencies and no context; the source corpus is not included and is not distributed. Included as a runnable example. **Build your own for your own field.**
 
+## Two rulers, not one — a model must clear BOTH gates
+
+| ruler | script | question it answers |
+|---|---|---|
+| **terms** | `eval_asr.py` | Are the words it emitted real, and did it catch the ones that matter? |
+| **granularity** | `eval_segments.py` | Can you locate those words **in time**? |
+
+The second gate is the one people skip, and it is where this repo found something that is
+in no model card. A model can transcribe every word correctly and still be useless: if it
+emits 30-second blocks, you cannot tell which sentence belongs to which slide (or subtitle
+frame, or moment in the recording).
+
+```bash
+python eval_segments.py out/     # segs/min + median gap, per model/variant
+```
+
+Gate: **>=10 segments/min with a median gap <=8s.**
+
+### The finding: Breeze-ASR-26's timestamps are broken by default (and fixable)
+
+Breeze-ASR-25's model card advertises *"Enhanced time alignment, suitable for automatic
+captioning."* The Taigi model **Breeze-ASR-26's card does not mention timestamps at all** —
+and measured, that silence means something:
+
+| model (default decoding) | segs/min | median segment | verdict |
+|---|---|---|---|
+| Whisper large-v3 | 24.4 | ~2s | OK |
+| Breeze-ASR-25 | 18.2 | ~2s | OK |
+| **Breeze-ASR-26** | **1.8 – 2.2** | **30.0s** | FAIL |
+
+That flat **30.0s median is exactly the Whisper decode window**: fine-tuning on synthetic
+Taigi degraded its timestamp-token prediction, so it is not segmenting at all — it dumps
+one block per window.
+
+**It is fixable, and the fix is not documented upstream.** Word-level timestamps come from
+cross-attention alignment and never touch the timestamp tokens:
+
+```bash
+python transcribe_variants.py MediaTek-Research/Breeze-ASR-26 novad_nocond_wts --clips clips/
+```
+
+That variant re-cuts segments from the word timings and restores **10.0–10.7 segs/min**
+(n=4) at ~1.3x decode time. So if you use Breeze-ASR-26 for **Taigi subtitles or any
+timestamp-dependent job, pass `word_timestamps=True`.**
+
 ## Results on my data (15 medical lectures, 8 min each)
 
 | Setup | Real word-types captured | Precision | GPU min / audio hour |
@@ -157,8 +202,17 @@ Run **one model per process**. Loading two models into one process on an 8 GB ca
 | Breeze-ASR-25 | 587 | 94.5% | 3.4 |
 | **Breeze-ASR-25 + tuned** | **649** | 93.7% | **3.0** |
 
-Negative results, so you don't repeat them: ensembling both models lost to Breeze alone; `hotwords` / `initial_prompt` made **both** models worse (they recycle the prompt into new wrong words); turning VAD **off** improved everything (it was eating real speech).
+MediaTek's own benchmarks already showed Breeze-ASR-25 beats Whisper on Taiwanese Mandarin
+(CSZS-zh-en WER 13.01 vs 29.49). What they could not tell me is whether that carries over
+to **my** domain vocabulary. It does: **+49%** real medical terms, and faster.
 
-And: my first round was n=1, and produced three confident conclusions that were **all** later overturned. n=1 is not a benchmark.
+Negative results, so you don't repeat them: ensembling both models lost to Breeze alone;
+`hotwords` / `initial_prompt` made **both** models worse (they recycle the prompt into new
+wrong words); turning VAD **off** improved everything (it was eating real speech).
+
+And: my first round was n=1, and produced three confident conclusions that were **all**
+later overturned. n=1 is not a benchmark.
+
+📊 **Full worked example, with every number and every limitation: [RESULTS.md](RESULTS.md)**
 
 MIT © 2026 [Po-Wei Chen](https://drpwchen.com), physiatrist.
