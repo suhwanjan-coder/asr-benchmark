@@ -226,4 +226,12 @@ later overturned. n=1 is not a benchmark.
 
 📊 **Full worked example, with every number and every limitation: [RESULTS.md](RESULTS.md)**
 
+## Related
+
+[**ytscribe**](https://github.com/drpwchen/ytscribe) — pull transcripts for a whole
+YouTube channel: existing subtitles first, local faster-whisper only for videos that
+have none. A convenient way to generate the kind of domain audio you would then measure
+with this tool — and its defaults (VAD off, batch-size 4) are the ones this benchmark
+picked.
+
 MIT © 2026 [Po-Wei Chen](https://drpwchen.com), physiatrist.
