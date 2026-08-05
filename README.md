@@ -120,7 +120,7 @@ MIT. 作者 [陳柏威 Po-Wei Chen](https://drpwchen.com)（復健科醫師）�
 
 如果這個工具幫你省下了時間，歡迎請我喝杯珍奶 🧡
 
-[![Buy me a boba](https://img.shields.io/badge/BUY_ME_A_BOBA-F8E0BE?style=for-the-badge&labelColor=F8E0BE&color=F8E0BE)](https://drpwchen.bobaboba.me)
+[![Buy me a drink](https://img.shields.io/badge/🧋_Buy_me_a_drink-8a6d4e?style=for-the-badge)](https://drpwchen.com/support/)
 
 ---
 
