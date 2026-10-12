@@ -5,3 +5,5 @@ venv/
 clips/
 out/
 lexicon/mine.txt
+models/
+lexicon/idealab.txt
