@@ -6,4 +6,5 @@ clips/
 out/
 lexicon/mine.txt
 models/
-lexicon/idealab.txt
+lexicon/idealab*.txt
+_bench/
