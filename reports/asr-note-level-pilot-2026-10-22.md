@@ -60,6 +60,7 @@
 
 ## 檔案
 
-- 試跑資料夾：`D:\lectures\_pilot_breeze25_胡婉妍`、`_pilot_medium_胡婉妍`、`_pilot_breeze25_黃立民`、`_pilot_medium_黃立民`、`_pilot_breeze25_洪冠予`、`_pilot_medium_洪冠予`（各有筆記、查核報告）
+- 試跑資料夾（2026-10-22 已封存）：`D:\lectures\_archive\asr_pilot_20261022\` 下的 `_pilot_breeze25_胡婉妍`、`_pilot_medium_胡婉妍`、`_pilot_breeze25_黃立民`、`_pilot_medium_黃立民`、`_pilot_breeze25_洪冠予`、`_pilot_medium_洪冠予`（各有筆記、查核報告）
+- 後續：阿志 2026-10-22 裁示切換，lecture-to-notes 預設主轉錄已改為 breeze25（該 repo commit 64d2ef7），並行試用期提案未採用。
 - 盲評：`_bench\pilot\judge\<場次>\judge_report.md`，解盲對應 `_bench\pilot\judge_keys.json`（git 忽略，留在本機）
 - 耗時與 token 紀錄：`_bench\pilot\ledger.tsv`
